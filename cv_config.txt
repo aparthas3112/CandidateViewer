@@ -1,0 +1,2 @@
+params = snr width dm beam test1 test2 test3
+data_path = /Users/aparthas/Documents/Projects/candidate_viewer/
