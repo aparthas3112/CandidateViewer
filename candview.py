@@ -8,18 +8,6 @@ import argparse
 import os,sys
 from utils import parse_cfg,get_all_candidates
 
-LD_LIB_SIGPYPROC = "/home/ebarr/Soft/sigpyproc/lib/c"
-if 'LD_LIBRARY_PATH' in os.environ:
-    if LD_LIB_SIGPYPROC not in os.environ['LD_LIBRARY_PATH']:
-        os.environ['LD_LIBRARY_PATH'].append(LD_LIB_SIGPYPROC)
-else:
-    os.environ['LD_LIBRARY_PATH'] = LD_LIB_SIGPYPROC
-
-# Add sigpyproc to sys.path:
-SIGPYPROC = "/home/ebarr/Soft/sigpyproc/lib/python/sigpyproc"
-if SIGPYPROC not in sys.path:
-    sys.path.append(SIGPYPROC)
-
 try:
     from sigpyproc.Readers import FilReader
     #from mysigpyproc import FilReader
@@ -60,6 +48,7 @@ sigproc_source = ColumnDataSource(data=dict(disp=[],dedisp=[],conv=[])) #This wi
 #UTC input text box
 utc_input = TextInput(value="Enter UTC here", title="UTC (YYYY-MM-DD-HH:SS:SS)")
 SAMPLE_UTC = "2018-04-08-11:08:23"
+print SAMPLE_UTC
 
 # Error text box
 errbox = Div(text="",width=800)
