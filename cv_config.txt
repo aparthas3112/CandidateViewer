@@ -1,2 +1,3 @@
 params = snr sample time width dm_index dm unknown start_sample end_sample beam
-data_path = /lustre/projects/p002_swin/wfarah/candviewer
+data_path = /lustre/projects/p002_swin/surveys/SUPERB
+cands_path = /lustre/projects/p002_swin/wfarah/candviewer
