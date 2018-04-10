@@ -5,6 +5,8 @@ Code to view Heimdall candidates given a UTC
 """
 
 import argparse
+import os,sys
+from utils import parse_cfg,parse_all_candidates
 
 
 #BOKEH imports
@@ -23,16 +25,9 @@ parser.add_argument("-cfile", dest="config", help="Configuration file for the ca
 args=parser.parse_args()
 
 #Parsing the configuration file
-configfile = open(str(args.config),"r")
-for line in configfile.readlines():
-    attr = line.split("=")[0].rstrip()
-    if attr == "params":
-        params=[]
-        for param in line.split("=")[1].rstrip().lstrip(' ').split(' '):
-            params.append(param)
-    if attr == "data_path":
-        data_path = line.split("=")[1].rstrip().lstrip(' ')
-
+config = parse_cfg(str(args.config))
+params = config['params']
+data_path = config['data_path']
 
 #Defining the column data sources for the candidate viewer
 
@@ -44,6 +39,7 @@ sigproc_source = ColumnDataSource(data=dict(image1=[],image2=[],image3=[])) #Thi
 
 #UTC input text box
 utc_input = TextInput(value="Enter UTC here", title="UTC (YYYY/MM/DD HH:SS:SS)")
+SAMPLE_UTC = "2018-04-08-11:08:23"
 
 #Candidate viewer plot
 x_axis = Select(title="X-axis", options=sorted(params),value="snr")
@@ -68,7 +64,6 @@ copyright = PreText(text=" (C) 2018 Aditya Parthasarathy and Wael Farah", width=
 
 
 ################### Callback routines ##################
-"""
 def filterdata():
     data = df[
             (df.snr >= snr_range.value[0]) &
@@ -77,18 +72,36 @@ def filterdata():
             (df.dm <= dm_range.value[1])
             ]
     return data
-"""
+
 def update_candview():
     #filtered_data = filterdata()
-    heimdall_source.data = dict(x=[], y=[])
+    if all_candidates is not None:
+        heimdall_source.data = dict(x=all_candidates[x_axis.value],
+                y=all_candidates[y_axis.value])
     candview.xaxis.axis_label = x_axis.value
     candview.yaxis.axis_label = y_axis.value
+
+def update_candfile():
+    global all_candidates
+    utc = utc_input.value
+    all_candidates_path = os.path.join(data_path,utc,"all_candidates.dat")
+    if not os.path.exists(all_candidates_path):
+        sys.stderr.write("<%s> doesn't exist\n" %all_candidates_path)
+        all_candidates = None
+        heimdall_source.data = dict(x=[], y=[])
+    else:
+        all_candidates = parse_all_candidates(all_candidates_path,
+                header=params)
+        x_axis.value = "snr" # Reset to default
+        y_axis.value = "dm" #Reset to default
+        update_candview()
 
 
 ############### Defining widgets and layout for the interface ############
 controls = [x_axis,y_axis]
 for control in controls:
     control.on_change('value', lambda attr, old, new: update_candview())
+utc_input.on_change('value', lambda attr, old, new: update_candfile())
 param_inputs = widgetbox(*controls, sizing_mode='fixed')
 
 range_sliders = [snr_range,dm_range]
@@ -103,6 +116,7 @@ layout = layout([utc_input],
                 [sigproc1,sigproc2,sigproc3],
                 [copyright],sizing_mode='fixed')
 
+all_candidates = None
 update_candview()
 curdoc().add_root(layout)
 

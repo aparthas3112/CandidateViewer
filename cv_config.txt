@@ -1,2 +1,2 @@
-params = snr width dm beam test1 test2 test3
-data_path = /Users/aparthas/Documents/Projects/candidate_viewer/
+params = snr sample time width dm_index dm unknown start_sample end_sample beam
+data_path = /lustre/projects/p002_swin/wfarah/candviewer

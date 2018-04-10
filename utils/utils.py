@@ -1,3 +1,5 @@
+import pandas as pd
+
 def parse_cfg(cfg_file,tags=None):
     """Function that returns config file with given tags as dictionar
 
@@ -54,3 +56,12 @@ def parse_cfg(cfg_file,tags=None):
         logging.warning("Couldn't parse <"+tag+"> from "+cfg_file)
         config_dict[tag] = None
     return config_dict
+
+def parse_all_candidates(path_to_cands, header=None):
+    """
+    Parse all_candidates.dat file as a pandas DataFrame
+    """
+    if header == None:
+        header = 'infer'
+    return pd.read_table(path_to_cands, names=header)
+
