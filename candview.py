@@ -8,16 +8,25 @@ import argparse
 import os,sys
 from utils import parse_cfg,get_all_candidates
 
+LD_LIB_SIGPYPROC = "/home/ebarr/Soft/sigpyproc/lib/c"
+if 'LD_LIBRARY_PATH' in os.environ:
+    if LD_LIB_SIGPYPROC not in os.environ['LD_LIBRARY_PATH']:
+        os.environ['LD_LIBRARY_PATH'].append(LD_LIB_SIGPYPROC)
+else:
+    os.environ['LD_LIBRARY_PATH'] = LD_LIB_SIGPYPROC
+
 # Add sigpyproc to sys.path:
-SIGPYPROC = "/home/ebarr/Soft/sigpyproc"
+SIGPYPROC = "/home/ebarr/Soft/sigpyproc/lib/python/sigpyproc"
 if SIGPYPROC not in sys.path:
     sys.path.append(SIGPYPROC)
 
 try:
     from sigpyproc.Readers import FilReader
+    #from mysigpyproc import FilReader
 except ImportError as e:
     sys.stderr.write("Could not import sigpyproc, exiting...\n")
     sys.exit(-1)
+
 
 #BOKEH imports
 from bokeh.plotting import figure, output_file, show, Figure
@@ -135,14 +144,13 @@ def plot_sigproc(cand):
 
 def tap_callback(attr, old, new):
     idx = new[u'1d']['indices']
+    reset_dynamic_spectra()
     if idx and all_candidates is not None:
         assert len(idx) == 1
         idx = idx[0]
         cand = all_candidates.iloc[idx]
         plot_sigproc(cand)
         sys.stderr.write("%s\n" %cand)
-    else:
-        reset_dynamic_spectra()
 
     #sys.stderr.write("%s %i\n%s\n%s\n\n" %(attr,idx,old,new))
 
