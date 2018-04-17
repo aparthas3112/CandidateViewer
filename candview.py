@@ -7,6 +7,8 @@ Code to view Heimdall candidates given a UTC
 import argparse
 import os,sys
 from utils import parse_cfg,get_all_candidates
+import ConfigParser
+from string import Template
 
 try:
     from sigpyproc.Readers import FilReader
@@ -29,13 +31,27 @@ from bokeh.models import CustomJS, TextInput, Paragraph
 #Argument parser
 parser = argparse.ArgumentParser(description="Candidate viewer for Heimdall")
 parser.add_argument("-cfile", dest="config", help="Configuration file for the candidate viewer", required=True)
+parser.add_argument("-project", dest="project", help="Project", default="TEST")
 args=parser.parse_args()
 
 #Parsing the configuration file
-config = parse_cfg(str(args.config))
-params = config['params']
-cands_path = config['cands_path']
-data_path = config['data_path']
+#config = parse_cfg(str(args.config))
+config = ConfigParser.ConfigParser()
+config.readfp(open(args.config))
+
+if not config.has_section(args.project):
+    sys.stderr.write("<%s> Doesn't exist in the configuration file.\n" %args.project)
+    sys.stderr.write("Please chose from:\n")
+    for p in config.sections():
+        sys.stderr.write(p+" ")
+    sys.stderr.write("\nExiting\n")
+    sys.exit(-1)
+
+HeimdallHeader = config.get(args.project,"HeimdallHeader").split(" ")
+
+BeamZfill = int(config.get(args.project,"BeamZfill"))
+CandsPathTemplate = Template(config.get(args.project,"CandsPathTemplate"))
+DataPathTemplate = Template(config.get(args.project,"DataPathTemplate"))
 
 #Defining the column data sources for the candidate viewer
 
@@ -55,8 +71,8 @@ errbox = Div(text="",width=800)
 errtext = open(os.path.join(os.path.dirname(__file__), "errbox.html")).read()
 
 #Candidate viewer plot
-x_axis = Select(title="X-axis", options=sorted(params),value="snr")
-y_axis = Select(title="Y-axis", options=sorted(params), value="dm")
+x_axis = Select(title="X-axis", options=sorted(HeimdallHeader), value="snr")
+y_axis = Select(title="Y-axis", options=sorted(HeimdallHeader), value="dm")
 
 candview = figure(plot_height=600, plot_width=800, title="Candidate Viewer", 
         tools=['tap','pan','wheel_zoom','reset'])
@@ -101,7 +117,7 @@ def update_candview():
 def update_candfile():
     global all_candidates
     utc = utc_input.value
-    all_candidates_path = os.path.join(cands_path,utc,"all_candidates.dat")
+    all_candidates_path = CandsPathTemplate.substitute(UTC=utc)
     if not os.path.exists(all_candidates_path):
         errbox.text = errtext
         sys.stderr.write("<%s> doesn't exist\n" %all_candidates_path)
@@ -110,7 +126,7 @@ def update_candfile():
     else:
         errbox.text = ""
         all_candidates = get_all_candidates(all_candidates_path,
-                header=params)
+                header=HeimdallHeader)
         x_axis.value = "snr" # Reset to default
         y_axis.value = "dm" #Reset to default
         update_candview()
@@ -122,8 +138,9 @@ def reset_dynamic_spectra():
 
 def plot_sigproc(cand):
     utc = utc_input.value
-    beam_str = str(int(cand['beam'])).zfill(2)
-    fil_path = os.path.join(data_path,utc,beam_str,utc+".fil")
+    beam_str = str(int(cand['beam'])).zfill(BeamZfill)
+    fil_path = DataPathTemplate.substitute(BEAM=beam_str,UTC=utc)
+    #fil_path = os.path.join(data_path,".fil")
     sys.stderr.write("%s\n" %fil_path)
     fil = FilReader(fil_path)
     disp = fil.readBlock(int(cand['sample']), 5000)
